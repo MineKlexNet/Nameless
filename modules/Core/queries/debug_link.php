@@ -4,7 +4,14 @@ $namelessmc_modules = [];
 $namelessmc_fe_templates = [];
 $namelessmc_panel_templates = [];
 
-foreach (Module::getModules() as $module) {
+$modules_query = $queries->getWhere('modules', ['id', '<>', 0]);
+foreach ($modules_query as $module_row) {
+    $module_path = join(DIRECTORY_SEPARATOR, array(ROOT_PATH, 'modules', htmlspecialchars($module_row->name), 'init.php'));
+
+    if (file_exists($module_path)) {
+        require_once($module_path);
+    }
+
     $namelessmc_modules[$module->getName()] = [
         'name' => $module->getName(),
         'enabled' => Util::isModuleEnabled($module->getName()),
@@ -36,7 +43,7 @@ foreach ($templates_query as $fe_template) {
 $panel_templates_query = $queries->getWhere('panel_templates', ['id', '<>', 0]);
 foreach ($panel_templates_query as $panel_template) {
 
-    $template_path = join(DIRECTORY_SEPARATOR, array(ROOT_PATH, 'custom', 'templates', htmlspecialchars($panel_template->name), 'template.php'));
+    $template_path = join(DIRECTORY_SEPARATOR, array(ROOT_PATH, 'custom', 'panel_templates', htmlspecialchars($panel_template->name), 'template.php'));
 
     if (file_exists($template_path)) {
         require_once($template_path);
@@ -115,7 +122,9 @@ $data = [
         'disk_total_space' => disk_total_space('./'),
         'disk_free_space' => disk_free_space('./'),
         'memory_total_space' => ini_get('memory_limit'),
-        'memory_free_space' => ini_get('memory_limit') - memory_get_usage(),
+        'memory_used_space' => memory_get_usage(),
+        'config_writable' => is_writable(ROOT_PATH . '/core/config.php'),
+        'cache_writable' => is_writable(ROOT_PATH . '/cache'),
     ],
 ];
 
