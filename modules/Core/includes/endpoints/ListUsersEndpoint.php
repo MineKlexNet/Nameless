@@ -5,6 +5,7 @@
  * @return string JSON Array
  */
 class ListUsersEndpoint extends EndpointBase {
+
     public function __construct() {
         $this->_route = 'listUsers';
         $this->_module = 'Core';
@@ -13,6 +14,8 @@ class ListUsersEndpoint extends EndpointBase {
     }
 
     public function execute(Nameless2API $api) {
+        $params = [];
+
         $discord_enabled = Util::isModuleEnabled('Discord Integration');
 
         if ($discord_enabled) {
@@ -21,14 +24,19 @@ class ListUsersEndpoint extends EndpointBase {
             $query = 'SELECT u.id, u.username, u.uuid, u.isbanned AS banned, u.active FROM nl2_users u';
         }
 
+        $operator = isset($_GET['operator']) && $_GET['operator'] == 'OR'
+                        ? ' OR'
+                        : ' AND';
+
         if (isset($_GET['group_id'])) {
-            $query .= ' INNER JOIN nl2_users_groups ug ON u.id = ug.user_id WHERE ug.group_id = ' . $_GET['group_id'];
+            $query .= ' INNER JOIN nl2_users_groups ug ON u.id = ug.user_id WHERE ug.group_id = ?';
+            $params[] = $_GET['group_id'];
             $filterGroup = true;
         }
 
         if (isset($_GET['banned'])) {
             if (isset($filterGroup)) {
-                $query .= ' AND';
+                $query .= $operator;
             } else {
                 $query .= ' WHERE';
             }
@@ -38,7 +46,7 @@ class ListUsersEndpoint extends EndpointBase {
 
         if (isset($_GET['active'])) {
             if (isset($filterBanned) || isset($filterGroup)) {
-                $query .= ' AND';
+                $query .= $operator;
             } else {
                 $query .= ' WHERE';
             }
@@ -48,14 +56,14 @@ class ListUsersEndpoint extends EndpointBase {
 
         if ($discord_enabled && isset($_GET['discord_linked'])) {
             if (isset($filterBanned) || isset($filterActive) || isset($filterGroup)) {
-                $query .= ' AND';
+                $query .= $operator;
             } else {
                 $query .= ' WHERE';
             }
             $query .= ' `u.discord_id` IS ' . ($_GET['discord_linked'] == 'true' ? 'NOT' : '') . ' NULL';
         }
 
-        $users = $api->getDb()->query($query)->results();
+        $users = $api->getDb()->selectQuery($query, $params)->results();
 
         $users_json = array();
         foreach ($users as $user) {

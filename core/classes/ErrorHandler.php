@@ -52,7 +52,7 @@ class ErrorHandler {
 
             foreach ($exception->getTrace() as $frame) {
 
-                // Check if previous frame had same file and line number (ie: DB->query() reports same file and line twice in a row)
+                // Check if previous frame had same file and line number (ie: DB->selectQuery() reports same file and line twice in a row)
                 if (end($frames)['file'] == $frame['file'] && end($frames)['line'] == $frame['line']) {
                     $skip_frames += 1;
                     continue;
@@ -78,7 +78,7 @@ class ErrorHandler {
      * @param int|null $number Higher number = more recent frame. If null, will use $exception trace count + 1.
      * @return array This frame in an array form.
      */
-    private static function parseFrame(?Throwable $exception, string $frame_file, int $frame_line, ?int $number = null): array {
+    public static function parseFrame(?Throwable $exception, string $frame_file, int $frame_line, ?int $number = null): array {
         $lines = file($frame_file);
 
         return [

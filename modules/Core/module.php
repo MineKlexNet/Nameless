@@ -239,9 +239,36 @@ class Core_Module extends Module {
         $custom_pages = null;
 
         // Hooks
-        HookHandler::registerEvent('registerUser', $language->get('admin', 'register_hook_info'), array('user_id' => $language->get('admin', 'user_id'), 'username' => $language->get('user', 'username'), 'uuid' => $language->get('admin', 'uuid'), 'avatar_url' => $language->get('user', 'avatar'), 'content' => $language->get('general', 'content'), 'url' => $language->get('user', 'profile')));
-        HookHandler::registerEvent('validateUser', $language->get('admin', 'validate_hook_info'), array('user_id' => $language->get('admin', 'user_id'), 'username' => $language->get('user', 'username'), 'uuid' => $language->get('admin', 'uuid')));
-        HookHandler::registerEvent('deleteUser', $language->get('admin', 'delete_hook_info'), array('user_id' => $language->get('admin', 'user_id'), 'username' => $language->get('user', 'username'), 'uuid' => $language->get('admin', 'uuid'), 'email_address' => $language->get('user', 'email_address')));
+        EventHandler::registerEvent('registerUser',
+            $language->get('admin', 'register_hook_info'),
+            [
+                'user_id' => $language->get('admin', 'user_id'),
+                'username' => $language->get('user', 'username'),
+                'uuid' => $language->get('admin', 'uuid'),
+                'avatar_url' => $language->get('user', 'avatar'),
+                'content' => $language->get('general', 'content'),
+                'url' => $language->get('user', 'profile')
+            ]
+        );
+
+        EventHandler::registerEvent('validateUser',
+            $language->get('admin', 'validate_hook_info'),
+            [
+                'user_id' => $language->get('admin', 'user_id'),
+                'username' => $language->get('user', 'username'),
+                'uuid' => $language->get('admin', 'uuid')
+            ]
+        );
+
+        EventHandler::registerEvent('deleteUser',
+            $language->get('admin', 'delete_hook_info'),
+            [
+                'user_id' => $language->get('admin', 'user_id'),
+                'username' => $language->get('user', 'username'),
+                'uuid' => $language->get('admin', 'uuid'),
+                'email_address' => $language->get('user', 'email_address')
+            ]
+        );
 
         // Webhooks
         $cache->setCache('hooks');
@@ -271,7 +298,7 @@ class Core_Module extends Module {
                 }
             }
         }
-        HookHandler::registerHooks($hook_array);
+        EventHandler::registerWebhooks($hook_array);
 
         // Captcha
         $captchaPublicKey = $this->_configuration->get('Core', 'recaptcha_key');
@@ -476,7 +503,7 @@ class Core_Module extends Module {
 
         if($validate_action['action'] == 'promote') {
             require_once(ROOT_PATH . '/modules/Core/hooks/ValidateHook.php');
-            HookHandler::registerHook('validateUser', 'ValidateHook::execute');
+            EventHandler::registerListener('validateUser', 'ValidateHook::execute');
             define('VALIDATED_DEFAULT', $validate_action['group']);
         }
 
@@ -1177,14 +1204,14 @@ class Core_Module extends Module {
                     if(defined('MINECRAFT') && MINECRAFT){
                         $players = array();
 
-                        $version = DB::getInstance()->query('select version()')->first()->{'version()'};
+                        $version = DB::getInstance()->selectQuery('select version()')->first()->{'version()'};
 
                         if(strpos(strtolower($version), 'mariadb') !== false){
                             $version = preg_replace('#[^0-9\.]#', '', $version);
 
                             if(version_compare($version, '10.1', '>=')){
                                 try {
-                                    $players = DB::getInstance()->query('SET STATEMENT MAX_STATEMENT_TIME = 1000 FOR SELECT ROUND(AVG(players_online)) AS players, DATE(FROM_UNIXTIME(queried_at)) AS `date` FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) IN (SELECT DATE(FROM_UNIXTIME(queried_at)) AS ForDate FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) > NOW() - INTERVAL 1 WEEK GROUP BY DATE(FROM_UNIXTIME(queried_at)) ORDER BY ForDate) GROUP BY DATE(FROM_UNIXTIME(queried_at))')->results();
+                                    $players = DB::getInstance()->selectQuery('SET STATEMENT MAX_STATEMENT_TIME = 1000 FOR SELECT ROUND(AVG(players_online)) AS players, DATE(FROM_UNIXTIME(queried_at)) AS `date` FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) IN (SELECT DATE(FROM_UNIXTIME(queried_at)) AS ForDate FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) > NOW() - INTERVAL 1 WEEK GROUP BY DATE(FROM_UNIXTIME(queried_at)) ORDER BY ForDate) GROUP BY DATE(FROM_UNIXTIME(queried_at))')->results();
                                 } catch (Exception $e) {
                                     // Unable to obtain player count
                                     $player_count_error = true;
@@ -1195,14 +1222,14 @@ class Core_Module extends Module {
 
                             if(version_compare($version, '5.7.4', '>=') && version_compare($version, '5.7.8', '<')){
                                 try {
-                                    $players = DB::getInstance()->query('SELECT MAX_STATEMENT_TIME = 1000 ROUND(AVG(players_online)) AS players, DATE(FROM_UNIXTIME(queried_at)) AS `date` FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) IN (SELECT DATE(FROM_UNIXTIME(queried_at)) AS ForDate FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) > NOW() - INTERVAL 1 WEEK GROUP BY DATE(FROM_UNIXTIME(queried_at)) ORDER BY ForDate) GROUP BY DATE(FROM_UNIXTIME(queried_at))')->results();
+                                    $players = DB::getInstance()->selectQuery('SELECT MAX_STATEMENT_TIME = 1000 ROUND(AVG(players_online)) AS players, DATE(FROM_UNIXTIME(queried_at)) AS `date` FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) IN (SELECT DATE(FROM_UNIXTIME(queried_at)) AS ForDate FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) > NOW() - INTERVAL 1 WEEK GROUP BY DATE(FROM_UNIXTIME(queried_at)) ORDER BY ForDate) GROUP BY DATE(FROM_UNIXTIME(queried_at))')->results();
                                 } catch (Exception $e) {
                                     // Unable to obtain player count
                                     $player_count_error = true;
                                 }
                             } else if(version_compare($version, '5.7.8', '>=')){
                                 try {
-                                    $players = DB::getInstance()->query('SELECT MAX_EXECUTION_TIME = 1000 ROUND(AVG(players_online)) AS players, DATE(FROM_UNIXTIME(queried_at)) AS `date` FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) IN (SELECT DATE(FROM_UNIXTIME(queried_at)) AS ForDate FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) > NOW() - INTERVAL 1 WEEK GROUP BY DATE(FROM_UNIXTIME(queried_at)) ORDER BY ForDate) GROUP BY DATE(FROM_UNIXTIME(queried_at))')->results();
+                                    $players = DB::getInstance()->selectQuery('SELECT MAX_EXECUTION_TIME = 1000 ROUND(AVG(players_online)) AS players, DATE(FROM_UNIXTIME(queried_at)) AS `date` FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) IN (SELECT DATE(FROM_UNIXTIME(queried_at)) AS ForDate FROM nl2_query_results WHERE DATE(FROM_UNIXTIME(queried_at)) > NOW() - INTERVAL 1 WEEK GROUP BY DATE(FROM_UNIXTIME(queried_at)) ORDER BY ForDate) GROUP BY DATE(FROM_UNIXTIME(queried_at))')->results();
                                 } catch (Exception $e) {
                                     // Unable to obtain player count
                                     $player_count_error = true;
@@ -1289,7 +1316,7 @@ class Core_Module extends Module {
         }
 
         require_once(ROOT_PATH . '/modules/Core/hooks/DeleteUserHook.php');
-        HookHandler::registerHook('deleteUser', 'DeleteUserHook::execute');
+        EventHandler::registerListener('deleteUser', 'DeleteUserHook::execute');
     }
 
     public function getDebugInfo(): array {

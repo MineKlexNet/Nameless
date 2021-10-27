@@ -19,6 +19,7 @@ class DB_Custom {
     private array $_results;
     private string $_prefix;
     private int $_count = 0;
+    private QueryRecorder $_query_recorder;
 
     public function __construct(string $host, string $database, string $username, string $password, int $port = 3306) {
         try {
@@ -28,6 +29,8 @@ class DB_Custom {
         } catch (PDOException $e) {
             die("<strong>Error:<br /></strong><div class=\"alert alert-danger\">" . $e->getMessage() . "</div>Please check your database connection settings.");
         }
+
+        $this->_query_recorder = QueryRecorder::getInstance();
     }
 
     public static function getInstance(string $host, string $database, string $username, string $password, int $port = 3306): DB_Custom {
@@ -37,7 +40,14 @@ class DB_Custom {
         return self::$_instance;
     }
 
-    public function query(string $sql, array $params = array()): DB_Custom {
+    /**
+     * @deprecated Use selectQuery function to select data from DB, or createQuery function to modify data in DB
+     */
+    public function query(string $sql,  array $params = array(), int $fetch_method = PDO::FETCH_OBJ): DB_Custom {
+        return $this->selectQuery(...func_get_args());
+    }
+
+    public function selectQuery(string $sql,  array $params = array(), int $fetch_method = PDO::FETCH_OBJ): DB_Custom {
         $this->_error = false;
         if ($this->_query = $this->_pdo->prepare($sql)) {
             $x = 1;
@@ -47,6 +57,8 @@ class DB_Custom {
                     $x++;
                 }
             }
+
+            $this->_query_recorder->pushQuery($sql, $params);
 
             if ($this->_query->execute()) {
                 $this->_results = $this->_query->fetchAll(PDO::FETCH_OBJ);
@@ -69,6 +81,8 @@ class DB_Custom {
                     $x++;
                 }
             }
+
+            $this->_query_recorder->pushQuery($sql, $params);
 
             if ($this->_query->execute()) {
                 $this->_count = $this->_query->rowCount();
@@ -103,7 +117,7 @@ class DB_Custom {
             if (in_array($operator, $operators)) {
                 $sql = "{$action} FROM {$table} WHERE {$field} {$operator} ?";
 
-                if (!$this->query($sql, array($value))->error()) {
+                if (!$this->selectQuery($sql, array($value))->error()) {
                     return $this;
                 }
             }
@@ -142,7 +156,7 @@ class DB_Custom {
         $table = $this->_prefix . $table;
         $sql = "SELECT * FROM {$table} WHERE {$column} LIKE '{$like}'";
 
-        if (!$this->query($sql)->error()) {
+        if (!$this->selectQuery($sql)->error()) {
             return $this;
         }
 
@@ -260,7 +274,7 @@ class DB_Custom {
             $sql = "SELECT * FROM {$table} ORDER BY {$order}";
         }
 
-        if (!$this->query($sql)->error()) {
+        if (!$this->selectQuery($sql)->error()) {
             return $this;
         }
 
@@ -275,7 +289,7 @@ class DB_Custom {
             $sql = "SELECT * FROM {$table} WHERE {$where} ORDER BY {$order}";
         }
 
-        if (!$this->query($sql)->error()) {
+        if (!$this->selectQuery($sql)->error()) {
             return $this;
         }
 
@@ -286,7 +300,7 @@ class DB_Custom {
         $showTable = $this->_prefix . $showTable;
         $sql = "SHOW TABLES LIKE '{$showTable}'";
 
-        if (!$this->query($sql)->error()) {
+        if (!$this->selectQuery($sql)->error()) {
             return $this->_query->rowCount();
         }
 

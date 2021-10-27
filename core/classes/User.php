@@ -118,7 +118,7 @@ class User {
                 $this->_data = $data->first();
 
                 // Get user groups
-                $groups_query = $this->_db->query('SELECT nl2_groups.* FROM nl2_users_groups INNER JOIN nl2_groups ON group_id = nl2_groups.id WHERE user_id = ? AND deleted = 0 ORDER BY `order`;', array($this->_data->id));
+                $groups_query = $this->_db->selectQuery('SELECT nl2_groups.* FROM nl2_users_groups INNER JOIN nl2_groups ON group_id = nl2_groups.id WHERE user_id = ? AND deleted = 0 ORDER BY `order`;', array($this->_data->id));
 
                 if ($groups_query->count()) {
 
@@ -130,12 +130,12 @@ class User {
                 } else {
                     // Get default group
                     // TODO: Use PRE_VALIDATED_DEFAULT ?
-                    $default_group = $this->_db->query('SELECT * FROM nl2_groups WHERE default_group = 1', array())->first();
+                    $default_group = $this->_db->selectQuery('SELECT * FROM nl2_groups WHERE default_group = 1', array())->first();
                     if ($default_group) {
                         $default_group_id = $default_group->id;
                     } else {
                         $default_group_id = 1; // default to 1
-                        $default_group = $this->_db->query('SELECT * FROM nl2_groups WHERE id = 1', array())->first();
+                        $default_group = $this->_db->selectQuery('SELECT * FROM nl2_groups WHERE id = 1', array())->first();
                     }
 
                     $this->addGroup($default_group_id, 0, $default_group);
@@ -225,7 +225,7 @@ class User {
 
                 $expiry = $is_admin ? 3600 : Config::get('remember/cookie_expiry');
                 $cookieName = $is_admin ? ($this->_cookieName . '_adm') : $this->_cookieName;
-                Cookie::put($cookieName, $hash, $expiry);
+                Cookie::put($cookieName, $hash, $expiry, Util::isConnectionSSL(), true);
             }
 
             return true;
@@ -336,21 +336,28 @@ class User {
     }
 
     /**
+     * @deprecated Use specific group HTML or group IDs methods instead
+     */
+    public function getAllGroups($html = null): array {
+        if (is_null($html)) {
+            return $this->getAllGroupIds();
+        }
+
+        return $this->getAllGroupHtml();
+    }
+
+    /**
      * Get all of a user's groups. We can return their ID only or their HTML display code.
      *
      * @param mixed $html If not null, will use group_html column instead of ID.
      * @return array Array of all their group's IDs or HTML.
      */
-    public function getAllGroups($html = null): array {
+    public function getAllGroupHtml(): array {
         $groups = array();
 
         if (count($this->_groups)) {
             foreach ($this->_groups as $group) {
-                if (is_null($html)) {
-                    $groups[] = $group->id;
-                } else {
-                    $groups[] = $group->group_html;
-                }
+                $groups[] = $group->group_html;
             }
         }
 
@@ -958,7 +965,7 @@ class User {
         if (FRIENDLY_URLS === true) {
             $split = explode('?', $_SERVER['REQUEST_URI']);
 
-            if (count($split) > 1)
+            if ($split != null && count($split) > 1)
                 $_SESSION['last_page'] = URL::build($split[0], $split[1]);
             else
                 $_SESSION['last_page'] = URL::build($split[0]);
@@ -1153,7 +1160,7 @@ class User {
         }
         $groups = rtrim($groups, ',') . ')';
 
-        return $this->_db->query('SELECT template.id, template.name FROM nl2_templates AS template WHERE template.enabled = 1 AND template.id IN (SELECT template_id FROM nl2_groups_templates WHERE can_use_template = 1 AND group_id IN ' . $groups . ')')->results();
+        return $this->_db->selectQuery('SELECT template.id, template.name FROM nl2_templates AS template WHERE template.enabled = 1 AND template.id IN (SELECT template_id FROM nl2_groups_templates WHERE can_use_template = 1 AND group_id IN ' . $groups . ')')->results();
     }
 
     /**
