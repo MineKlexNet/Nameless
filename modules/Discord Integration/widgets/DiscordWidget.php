@@ -14,22 +14,22 @@ class DiscordWidget extends WidgetBase {
     private Cache $_cache;
     private ?int $_guild_id;
 
-    public function __construct(array $pages = array(), Cache $cache) {
+    public function __construct(array $pages = [], Cache $cache) {
         $this->_cache = $cache;
         $this->_guild_id = Discord::getGuildId();
 
         parent::__construct($pages);
 
         // Get widget
-        $widget_query = DB::getInstance()->selectQuery('SELECT `location`, `order` FROM nl2_widgets WHERE `name` = ?', array('Discord'))->first();
+        $widget_query = DB::getInstance()->selectQuery('SELECT `location`, `order` FROM nl2_widgets WHERE `name` = ?', ['Discord'])->first();
 
         // Set widget variables
         $this->_module = 'Discord Integration';
         $this->_name = 'Discord';
-        $this->_location = isset($widget_query->location) ? $widget_query->location : null;
+        $this->_location = $widget_query->location ?? null;
         $this->_description = 'Display your Discord channel on your site. Make sure you have entered your Discord widget details in the StaffCP -> Integrations -> Discord tab first!';
         $this->_settings = ROOT_PATH . '/modules/Discord Integration/includes/admin_widgets/discord.php';
-        $this->_order = isset($widget_query->order) ? $widget_query->order : null;
+        $this->_order = $widget_query->order ?? null;
     }
 
     public function initialise(): void {
@@ -41,7 +41,6 @@ class DiscordWidget extends WidgetBase {
 
         } else {
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0);
             curl_setopt($ch, CURLOPT_TIMEOUT, 5);

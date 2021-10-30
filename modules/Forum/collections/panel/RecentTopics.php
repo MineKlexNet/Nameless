@@ -18,15 +18,9 @@ class RecentTopicsItem extends CollectionItemBase {
         $cache->setCache('dashboard_stats_collection');
         if ($cache->isCached('recent_topics')) {
             $from_cache = $cache->retrieve('recent_topics');
-            if (isset($from_cache['order']))
-                $order = $from_cache['order'];
-            else
-                $order = 3;
+            $order = $from_cache['order'] ?? 3;
 
-            if (isset($from_cache['enabled']))
-                $enabled = $from_cache['enabled'];
-            else
-                $enabled = 1;
+            $enabled = $from_cache['enabled'] ?? 1;
         } else {
             $order = 3;
             $enabled = 1;
@@ -40,11 +34,11 @@ class RecentTopicsItem extends CollectionItemBase {
     }
 
     public function getContent(): string {
-        $this->_smarty->assign(array(
+        $this->_smarty->assign([
             'ICON' => $this->_language->get('forum', 'recent_topics_statistic_icon'),
             'TITLE' => $this->_language->get('forum', 'recent_topics'),
             'VALUE' => $this->_topics
-        ));
+        ]);
 
         return $this->_smarty->fetch('collections/dashboard_stats/recent_topics.tpl');
     }
