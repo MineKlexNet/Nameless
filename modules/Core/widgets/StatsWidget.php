@@ -12,10 +12,9 @@
 class StatsWidget extends WidgetBase {
 
     private Cache $_cache;
-    private Smarty $_smarty;
-    private Language $_language;
+    private array $_language;
 
-    public function __construct(array $pages, Smarty $smarty, Language $language, Cache $cache) {
+    public function __construct(array $pages, Smarty $smarty, array $language, Cache $cache) {
         $this->_cache = $cache;
         $this->_smarty = $smarty;
         $this->_language = $language;

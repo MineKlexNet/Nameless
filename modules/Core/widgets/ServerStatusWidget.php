@@ -11,7 +11,6 @@
 class ServerStatusWidget extends WidgetBase {
 
     private Cache $_cache;
-    private Smarty $_smarty;
     private Language $_language;
 
     public function __construct(array $pages, Smarty $smarty, Language $language, Cache $cache) {
