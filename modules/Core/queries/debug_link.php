@@ -83,6 +83,7 @@ foreach (GroupSyncManager::getInstance()->getInjectors() as $injector) {
     ];
 }
 
+$group_sync['rules'] = [];
 foreach (DB::getInstance()->get('group_sync', ['id', '<>', 0])->results() as $rule) {
     $rules = [];
     foreach (get_object_vars($rule) as $column => $value) {
@@ -145,7 +146,7 @@ $data = [
             'panel' => $namelessmc_panel_templates,
         ],
     ],
-    'enviroment' => [
+    'environment' => [
         'php_version' => phpversion(),
         'php_modules' => get_loaded_extensions(),
         'host_os' => php_uname('s'),
@@ -160,6 +161,6 @@ $data = [
     ],
 ];
 
-$result = Util::curlGetContents('https://paste.rkslot.nl/documents', json_encode($data, JSON_PRETTY_PRINT));
+$result = HttpClient::post('https://bytebin.rkslot.nl/post', json_encode($data, JSON_PRETTY_PRINT));
 
 die('https://debug.namelessmc.com/' . json_decode($result, true)['key']);

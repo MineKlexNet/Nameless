@@ -373,21 +373,16 @@ class Util {
         $uid = $queries->getWhere('settings', ['name', '=', 'unique_id']);
         $uid = $uid[0]->value;
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_URL, 'https://namelessmc.com/nl_core/nl2/stats.php?uid=' . $uid . '&version=' . $current_version . '&php_version=' . urlencode(phpversion()) . '&language=' . LANGUAGE . '&docker=' . (getenv('NAMELESSMC_METRICS_DOCKER') == true));
+        $update_check = HttpClient::get('https://namelessmc.com/nl_core/nl2/stats.php?uid=' . $uid . '&version=' . $current_version . '&php_version=' . urlencode(phpversion()) . '&language=' . LANGUAGE . '&docker=' . (getenv('NAMELESSMC_METRICS_DOCKER') == true));
 
-        $update_check = curl_exec($ch);
-
-        if (curl_error($ch)) {
-            $error = curl_error($ch);
+        if ($update_check->hasError()) {
+            $error = $update_check->getError();
         } else {
+            $update_check = $update_check->data();
             if ($update_check == 'Failed') {
                 $error = 'Unknown error';
             }
         }
-
-        curl_close($ch);
 
         if (isset($error)) {
             return json_encode(['error' => $error]);
@@ -423,22 +418,16 @@ class Util {
      * @return string NamelessMC news in JSON.
      */
     public static function getLatestNews(): string {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_URL, 'https://namelessmc.com/news');
+        $news = HttpClient::get('https://namelessmc.com/news');
 
-        $news = curl_exec($ch);
-
-        if (curl_error($ch)) {
-            $error = curl_error($ch);
+        if ($news->hasError()) {
+            $error = $news->getError();
         }
-
-        curl_close($ch);
 
         if (isset($error)) {
             return json_encode(['error' => $error]);
         } else {
-            return $news;
+            return $news->data();
         }
     }
 
@@ -446,34 +435,18 @@ class Util {
      * Make a GET request to a URL using cURL.
      * Failures will automatically be logged along with the error.
      *
+     * @deprecated Please use HttpClient class instead.
+     *
      * @param string $full_url URL to send request to.
      * @param string|null $body Request body to attach to request.
      * @return string|bool Response from remote server, false on failure.
      */
     public static function curlGetContents(string $full_url, ?string $body = null) {
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_URL, $full_url);
-
-        if ($body != null) {
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type:application/json']);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        if ($body == null) {
+            return HttpClient::get($full_url)->data();
         }
 
-        $contents = curl_exec($ch);
-
-        // Make an error log if a curl error occurred
-        if ($contents === false) {
-            Log::getInstance()->log(Log::Action('misc/curl_error'), curl_error($ch));
-            curl_close($ch);
-
-            return false;
-        }
-
-        curl_close($ch);
-
-        return $contents;
+        return HttpClient::post($full_url, $body)->data();
     }
 
     /**
