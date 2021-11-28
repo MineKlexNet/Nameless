@@ -25,7 +25,7 @@ class DB extends Instanceable {
             if(Config::get('mysql/initialise_charset')) {
                 $charset = Config::get('mysql/charset');
                 if (!$charset) $charset = 'utf8mb4';
-                
+
                 $charset = 'charset=' . $charset;
             }
 
@@ -52,7 +52,11 @@ class DB extends Instanceable {
             $x = 1;
             if(count($params)) {
                 foreach($params as $param) {
-                    $this->_query->bindValue($x, $param);
+                    if (is_int($param)) {
+                        $this->_query->bindValue($x, $param, PDO::PARAM_INT);
+                    } else {
+                        $this->_query->bindValue($x, $param, PDO::PARAM_STR);
+                    }
                     $x++;
                 }
             }
@@ -214,7 +218,7 @@ class DB extends Instanceable {
         return (!$this->createQuery($sql, [$id])->error());
     }
 
-    public function decrement(string $table, int $id, string $field) {
+    public function decrement(string $table, int $id, string $field): bool {
         $table = $this->_prefix . $table;
         $sql = "UPDATE {$table} SET {$field} = {$field} - 1 WHERE id = ?";
 
@@ -255,13 +259,9 @@ class DB extends Instanceable {
 
     public function orderAll(string $table, string $order, string $sort) {
         $table = $this->_prefix . $table;
-        if (isset($sort)) {
-            $sql = "SELECT * FROM {$table} ORDER BY {$order} {$sort}";
-        } else {
-            $sql = "SELECT * FROM {$table} ORDER BY {$order}";
-        }
+        $sql = "SELECT * FROM {$table} ORDER BY {$order} {$sort}";
 
-        if(!$this->selectQuery($sql)->error()) {
+        if (!$this->selectQuery($sql)->error()) {
             return $this;
         }
 
@@ -270,13 +270,9 @@ class DB extends Instanceable {
 
     public function orderWhere(string $table, string $where, string $order, string $sort) {
         $table = $this->_prefix . $table;
-        if (isset($sort)) {
-            $sql = "SELECT * FROM {$table} WHERE {$where} ORDER BY {$order} {$sort}";
-        } else {
-            $sql = "SELECT * FROM {$table} WHERE {$where} ORDER BY {$order}";
-        }
+        $sql = "SELECT * FROM {$table} WHERE {$where} ORDER BY {$order} {$sort}";
 
-        if(!$this->selectQuery($sql)->error()) {
+        if (!$this->selectQuery($sql)->error()) {
             return $this;
         }
 

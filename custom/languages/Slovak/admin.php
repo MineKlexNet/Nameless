@@ -34,7 +34,7 @@ $language = [
     'running_php_version' => 'PHP verzia <strong>{x}</strong>', // Don't replace "{x}"
     'statistics' => 'Štatistiky',
     'registrations' => 'Registrácie',
-    'topics' => 'Vlákna',
+    'topics' => 'Témy',
     'posts' => 'Príspevky',
     'notices' => 'Upozornenia',
     'no_notices' => 'Žiadne upozornenia.',
@@ -728,4 +728,5 @@ $language = [
     'text_colour_required' => 'Farba textu je povinná',
     'no_announcements' => 'Zatiaľ neboli vytvorené žiadne oznámenia.',
     'announcement_order' => 'Poradie',
+    'announcement_hook_info' => 'Vytvorenie oznámenia',
 ];

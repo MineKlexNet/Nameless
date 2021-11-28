@@ -149,6 +149,8 @@ class Util {
      * Get avatar source with UUID as `{x}` and size as `{y}`.
      * Used for avatar preview in online players list.
      *
+     * @deprecated Use `AvatarSource::getUrlToFormat()`
+     *
      * @return string URL to be formatted.
      */
     public static function getAvatarSource(): string {
@@ -439,9 +441,9 @@ class Util {
      *
      * @param string $full_url URL to send request to.
      * @param string|null $body Request body to attach to request.
-     * @return string|bool Response from remote server, false on failure.
+     * @return string Response from remote server, false on failure.
      */
-    public static function curlGetContents(string $full_url, ?string $body = null) {
+    public static function curlGetContents(string $full_url, ?string $body = null): string {
         if ($body == null) {
             return HttpClient::get($full_url)->data();
         }
@@ -515,7 +517,7 @@ class Util {
      * Get in-game rank name from a website group ID, uses Group Sync rules.
      *
      * @param int $website_group_id ID of website group to search for.
-     * @return string|null Name of in-game rank or null if rule is not setup.
+     * @return string|null Name of in-game rank or null if rule is not set up.
      */
     public static function getIngameRankName(int $website_group_id): ?string {
         $nameless_injector = GroupSyncManager::getInstance()->getInjectorByClass(NamelessMCGroupSyncInjector::class);

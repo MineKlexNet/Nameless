@@ -614,7 +614,7 @@ class User {
      *
      * @param int $group_id ID of group to give.
      * @param int $expire Expiry in epoch time. If not supplied, group will never expire.
-     * @param $group_data array Load data from existing query.
+     * @param object|null $group_data Load data from existing query.
      *
      * @return bool True on success, false if they already have it.
      */
@@ -633,7 +633,7 @@ class User {
             ]
         );
 
-        if($group_data == null) {
+        if ($group_data == null) {
             $group_data = $this->_db->get('groups', ['id', '=', $group_id]);
             if ($group_data->count()) {
                 $this->_groups[$group_id] = $group_data->first();
@@ -862,70 +862,12 @@ class User {
     }
 
     /**
-     * Delete a user's access to view the PM, or if they're the author, the PM itself.
-     *
-     * @param int|null $pm_id ID of Pm to delete.
-     * @param int|null $user_id ID of user to use.
-     * @return bool Whether the action succeeded or not.
-     */
-    public function deletePM(int $pm_id = null, int $user_id = null) {
-        if ($user_id && $pm_id) {
-            // Is the user the author?
-            $data = $this->_db->get('private_messages', ['id', '=', $pm_id]);
-            if ($data->count()) {
-                $data = $data->results();
-                $data = $data[0];
-                if ($data->author_id != $user_id) {
-                    // User is not the author, only delete
-                    $pms = $this->_db->get('private_messages_users', ['pm_id', '=', $pm_id])->results();
-                    foreach ($pms as $pm) {
-                        if ($pm->user_id == $user_id) {
-                            // get the ID and delete
-                            $id = $pm->id;
-                            $this->_db->delete('private_messages_users', ['id', '=', $id]);
-                            return true;
-                        }
-                    }
-                } else {
-                    // User is the author, delete the PM altogether
-                    $this->_db->delete('private_messages_users', ['pm_id', '=', $pm_id]);
-                    $this->_db->delete('private_messages', ['id', '=', $pm_id]);
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    // Get the number of unread PMs for the specified user
-    public function getUnreadPMs(int $user_id = null) {
-        if ($user_id) {
-            $pms = $this->_db->get('private_messages_users', ['user_id', '=', $user_id]);
-            if ($pms->count()) {
-                $pms = $pms->results();
-                $count = 0;
-                foreach ($pms as $pm) {
-                    if ($pm->read == 0) {
-                        $count++;
-                    }
-                }
-                return $count;
-            } else {
-                return 0;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Can the specified user view StaffCP?
      *
      * @return bool Whether they can view it or not.
      */
     public function canViewStaffCP(): bool {
-        if (count($this->_groups)) {
+        if (isset($this->_groups) && count($this->_groups)) {
             foreach ($this->_groups as $group) {
                 if ($group->admin_cp == 1) {
                     return true;

@@ -365,6 +365,9 @@ if ($page != 'install') {
     else
         define('DEFAULT_AVATAR_PERSPECTIVE', 'face');
 
+    // Widgets
+    $widgets = new Widgets($cache);
+
     // Maintenance mode?
     $cache->setCache('maintenance_cache');
     $maintenance = $cache->retrieve('maintenance');
@@ -427,9 +430,6 @@ if ($page != 'install') {
         $home_icon = '';
 
     $navigation->add('index', $language->get('general', 'home'), URL::build('/'), 'top', null, $home_order, $home_icon);
-
-    // Widgets
-    $widgets = new Widgets($cache);
 
     // Endpoints
     $endpoints = new Endpoints();
@@ -585,7 +585,7 @@ if ($page != 'install') {
         }
     } else {
         // Perform tasks for guests
-        if (!$_SESSION['checked'] || $_SESSION['checked'] <= strtotime('-5 minutes')) {
+        if (!$_SESSION['checked'] || (isset($_SESSION['checked']) && $_SESSION['checked'] <= strtotime('-5 minutes'))) {
             $already_online = $queries->getWhere('online_guests', ['ip', '=', $ip]);
 
             $date = date('U');
